@@ -31,13 +31,12 @@ export async function submitTasks(taskNames: string[]): Promise<SubmitTasksResul
     return { ok: false, error: "Select one or more tasks from the list." };
   }
 
-  await prisma.taskSubmission.createMany({
-    data: valid.map((taskName) => ({
-      taskName,
+  await prisma.taskSubmission.create({
+    data: {
+      taskNames: valid,
       userId,
       submitterDisplayName,
-      submittedAt: new Date(),
-    })),
+    },
   });
 
   revalidatePath("/history");

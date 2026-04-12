@@ -28,13 +28,14 @@ model User {
 }
 
 model TaskSubmission {
-  id                     String   @id @default(cuid())
-  taskName               String
-  submittedAt            DateTime @default(now())
+  id                   String   @id @default(cuid())
+  /// All tasks selected in one submit action (one history row per submit).
+  taskNames            String[]
+  submittedAt          DateTime @default(now())
   userId               String
   /// Username / display name at time of submit (denormalized for history).
   submitterDisplayName String
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([submittedAt])
   @@index([userId])

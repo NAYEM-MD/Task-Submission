@@ -179,7 +179,7 @@ Manual checks in the browser:
 - `src/proxy.ts` — Auth redirects for protected routes (Next.js 16 **proxy** convention)  
 - `src/auth.ts` / `src/auth.config.ts` — NextAuth configuration  
 - `src/actions/` — Server actions (auth + app)  
-- `prisma/schema.prisma` — User, NextAuth models, `TaskSubmission`  
+- `prisma/schema.prisma` — User, NextAuth models, `TaskSubmission` (one row per submit; `taskNames` is a string array)  
 
 ## Scripts reference
 
