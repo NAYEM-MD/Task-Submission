@@ -11,12 +11,43 @@ function displayUsername(name: string | null, email: string) {
   return name?.trim() || email;
 }
 
+type HistoryItem = {
+  id: string;
+  taskName: string;
+  username: string;
+  dateStr: string;
+  timeStr: string;
+};
+
 export default async function HistoryPage() {
   const rows = await prisma.taskSubmission.findMany({
     orderBy: { submittedAt: "desc" },
     include: {
       user: { select: { name: true, email: true } },
     },
+  });
+
+  const items: HistoryItem[] = rows.map((row) => {
+    const d = row.submittedAt;
+    const dateStr = d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+    const timeStr = d.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    const username =
+      row.submitterDisplayName || displayUsername(row.user.name, row.user.email);
+    return {
+      id: row.id,
+      taskName: row.taskName,
+      username,
+      dateStr,
+      timeStr,
+    };
   });
 
   return (
@@ -35,54 +66,82 @@ export default async function HistoryPage() {
           No submissions yet. Go to Start to submit your first one.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="overflow-x-auto">
-            <table className="min-w-[36rem] text-left text-xs sm:text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-600 sm:text-xs dark:border-zinc-800 dark:bg-zinc-800/50 dark:text-zinc-400">
-                <tr>
-                  <th className="px-3 py-2.5 sm:px-4 sm:py-3">Task</th>
-                  <th className="px-3 py-2.5 sm:px-4 sm:py-3">Date</th>
-                  <th className="px-3 py-2.5 sm:px-4 sm:py-3">Time</th>
-                  <th className="px-3 py-2.5 sm:px-4 sm:py-3">Username</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {rows.map((row) => {
-                  const d = row.submittedAt;
-                  const dateStr = d.toLocaleDateString(undefined, {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  });
-                  const timeStr = d.toLocaleTimeString(undefined, {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  });
-                  const username =
-                    row.submitterDisplayName ||
-                    displayUsername(row.user.name, row.user.email);
-                  return (
-                    <tr key={row.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40">
-                      <td className="whitespace-nowrap px-3 py-2.5 font-medium text-zinc-900 sm:px-4 sm:py-3 dark:text-zinc-100">
-                        {row.taskName}
+        <>
+          {/* Mobile: stacked cards — no horizontal scroll */}
+          <ul className="space-y-3 md:hidden">
+            {items.map((item) => (
+              <li
+                key={item.id}
+                className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                <dl className="grid gap-3 text-sm">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Task
+                    </dt>
+                    <dd className="mt-0.5 break-words font-medium text-zinc-900 dark:text-zinc-100">
+                      {item.taskName}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Name
+                    </dt>
+                    <dd className="mt-0.5 break-words text-zinc-800 dark:text-zinc-200">{item.username}</dd>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        Date
+                      </dt>
+                      <dd className="mt-0.5 text-zinc-700 dark:text-zinc-300">{item.dateStr}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        Time
+                      </dt>
+                      <dd className="mt-0.5 tabular-nums text-zinc-700 dark:text-zinc-300">{item.timeStr}</dd>
+                    </div>
+                  </div>
+                </dl>
+              </li>
+            ))}
+          </ul>
+
+          {/* md+: table */}
+          <div className="hidden overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm md:block dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-0 text-left text-sm">
+                <thead className="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800/50 dark:text-zinc-400">
+                  <tr>
+                    <th className="px-4 py-3">Task</th>
+                    <th className="px-4 py-3">Name</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {items.map((item) => (
+                    <tr key={item.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40">
+                      <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+                        {item.taskName}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-zinc-600 sm:px-4 sm:py-3 dark:text-zinc-400">
-                        {dateStr}
+                      <td className="max-w-[12rem] break-words px-4 py-3 text-zinc-700 dark:text-zinc-300">
+                        {item.username}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-zinc-600 sm:px-4 sm:py-3 dark:text-zinc-400">
-                        {timeStr}
+                      <td className="whitespace-nowrap px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                        {item.dateStr}
                       </td>
-                      <td className="max-w-[10rem] truncate whitespace-nowrap px-3 py-2.5 text-zinc-600 sm:max-w-none sm:px-4 sm:py-3 dark:text-zinc-400">
-                        {username}
+                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-zinc-600 dark:text-zinc-400">
+                        {item.timeStr}
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
